@@ -17,16 +17,16 @@ jobs:
           fetch-depth: '1'
 
       - name: Unit Test 1
-          run: |
+        run: |
             cd tests
             python3 -m pytest task_manager_max_size_test.py
 
       - name: Unit Test 2
-          run: |
+        run: |
             cd tests
             python3 -m pytest task_manager_fifo_test.py
 
       - name: Unit Test 3
-          run: |
+        run: |
             cd tests
             python3 -m pytest task_manager_priority_test.py
