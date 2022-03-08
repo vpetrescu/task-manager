@@ -1,42 +1,48 @@
-from enum import Enum
 from collections import OrderedDict
-from typing import List
-import time
+from enum import Enum
 import heapq
 import logging
+import time
+from typing import List
+
 
 Priority = Enum("Priority", ["low", "medium", "high"])
+
 
 class Process(object):
     def __init__(self, pid: int, priority: Priority):
         self._priority = priority
         self._timestamp = time.time()
-        self._pid = pid
+        self.pid = pid
 
     def __lt__(self, other):
-        if self._priority == other.priority:
-            return self._timestamp < other.timestamp
-        return self._priority < other.priority
+        if self._priority == other._priority:
+            return self._timestamp < other._timestamp
+        return self._priority < other._priority
 
     def kill(self):
         pass
 
 
-class TaskManagerInterface:
+class TaskManagerInterface(object):
+    def __init__(self, max_capacity: int):
+        self.max_capacity = max_capacity
+        self.processes = {}
+
     def add(self, process: Process):
         pass
 
-    def kill(self, pid:int):
+    def kill(self, pid: int):
         pass
 
     def kill_all(self):
-        pass
+        self.processes = {}
 
     def kill_group(self, *argv):  # O(n)
         for pid in argv:
             self.kill(pid)
         else:
-            logging.warn("Process with pid {} was not found".format(pid))
+            logging.warning("Process with pid {} was not found".format(pid))
 
     def list(self):
         print("Timestamp\t ProcessId\t Priority")
@@ -45,61 +51,71 @@ class TaskManagerInterface:
                                         pid,
                                         self.processes[pid].priority))
 
+    def current_count(self):
+        return len(self.processes)
+
 
 class TaskManagerMaxSize(TaskManagerInterface):
     def __init__(self, max_capacity: int):
+        super().__init__(max_capacity)
         self.processes: dict[int, Process] = {}
-        self.max_capacity = max_capacity
 
-    def add(self, process: Process):
-        if len(self.processes) < self.max_capacity:
-            self.processes[process.pid] = process
+    def add(self, process: Process):  # O(1)
+        if len(self.processes) == self.max_capacity:
+            logging.warning("Process was discarded.")
+        elif process.pid in self.processes:
+            logging.warning("Process already exists.")
         else:
-            logging.warn("Process was discarded.")
+            self.processes[process.pid] = process
 
-    def kill(self, pid):  # O(n)
+    def kill(self, pid):  # O(1)
         if pid in self.processes:
             del self.processes[pid]
         else:
-            logging.warn("Process with pid {} was not found".format(pid))
+            logging.warning("Process with pid {} was not found".format(pid))
 
 
 class TaskManagerFIFO(TaskManagerInterface):
     def __init__(self, max_capacity: int):
-        self.processes: OrderedDict = {}
-        self.max_capacity = max_capacity
+        super().__init__(max_capacity)
+        self.processes: OrderedDict[int, Process] = OrderedDict({})
 
     def add(self, process: Process):  # O(1)
-        if len(self.processes) < self.max_capacity:
-            self.process.popitem()
+        if len(self.processes) == self.max_capacity:
+            self.processes.popitem(last=False)
         self.processes[process.pid] = process
 
-    def kill(self, pid):  # O(n)
+    def kill(self, pid):  # O(1)
         if pid in self.processes:
             del self.processes[pid]
         else:
-            logging.warn("Process with pid {} was not found".format(pid))
+            logging.warning("Process with pid {} was not found".format(pid))
 
 
 class TaskManagerPriorityBased(TaskManagerInterface):
     def __init__(self, max_capacity: int):
+        super().__init__(max_capacity)
         self.processes: dict[int, Process] = {}
         self.priority_queue: List[Process] = []
-        self.max_capacity = max_capacity
 
-    def add(self, process: Process):  # O(1)
-        if len(self.processes) < self.max_capacity:
-            self.processes[process.pid] = process
-            heapq.heappush(self.priority_queue, process)
-        else:
-            logging.warn("Process was discarded.")
+    def add(self, process: Process):  # O(logN)
+        if len(self.processes) == self.max_capacity:
+            p = heapq.heappop(self.priority_queue)
+            del self.processes[p.pid]
+        heapq.heappush(self.priority_queue, process)
+        self.processes[process.pid] = process
 
-    def kill(self, pid):  # O(n)
+    def kill(self, pid):  # O(n) due to heapify method
         if pid in self.processes:
-            heapq.heappop(self.priority_queue)
+            for i in range(len(self.priority_queue)):
+                if self.priority_queue[i].pid == pid:
+                    self.priority_queue[i], self.priority_queue[-1] = self.priority_queue[-1], self.priority_queue[i]
+                    heapq.heappop(self.priority_queue)
+                    heapq.heapify(self.priority_queue)
+                    break
             del self.processes[pid]
         else:
-            logging.warn("Process with pid {} was not found".format(pid))
+            logging.warning("Process with pid {} was not found".format(pid))
 
     def kill_all(self):
         super().kill_all()
