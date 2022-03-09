@@ -35,6 +35,13 @@ class TaskManagerFIFOTestCase(unittest.TestCase):
         self.tm.kill_group(2, 3)
         self.assertEqual(self.tm.current_count(), 0)
 
+    def test_list(self):
+        self.tm.add(self.p1)
+        self.tm.add(self.p2)
+        self.tm.add(self.p3)
+        self.tm.list()
+        #TODO add assertion here
+
 
 if __name__ == '__main__':
     unittest.main()

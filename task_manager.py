@@ -11,14 +11,14 @@ Priority = Enum("Priority", ["low", "medium", "high"])
 
 class Process(object):
     def __init__(self, pid: int, priority: Priority):
-        self._priority = priority
-        self._timestamp = time.time()
+        self.priority = priority
+        self.timestamp = time.time()
         self.pid = pid
 
     def __lt__(self, other):
-        if self._priority == other._priority:
-            return self._timestamp < other._timestamp
-        return self._priority < other._priority
+        if self.priority == other.priority:
+            return self.timestamp < other.timestamp
+        return self.priority < other.priority
 
     def kill(self):
         pass
@@ -46,7 +46,7 @@ class TaskManagerInterface(object):
 
     def list(self):
         print("Timestamp\t ProcessId\t Priority")
-        for pid in sorted(self.processes.items()):
+        for pid in sorted(self.processes):
             print("{}\t {}\t {}".format(self.processes[pid].timestamp,
                                         pid,
                                         self.processes[pid].priority))
@@ -62,9 +62,9 @@ class TaskManagerMaxSize(TaskManagerInterface):
 
     def add(self, process: Process):  # O(1)
         if len(self.processes) == self.max_capacity:
-            logging.warning("Process was discarded.")
+            logging.warning("Process with pid {} was discarded.".format(process.pid))
         elif process.pid in self.processes:
-            logging.warning("Process already exists.")
+            logging.warning("Process with pid {} already exists.".format(process.pid))
         else:
             self.processes[process.pid] = process
 
@@ -100,8 +100,12 @@ class TaskManagerPriorityBased(TaskManagerInterface):
 
     def add(self, process: Process):  # O(logN)
         if len(self.processes) == self.max_capacity:
-            p = heapq.heappop(self.priority_queue)
-            del self.processes[p.pid]
+            if self.priority_queue[0].priority < process.priority:
+                p = heapq.heappop(self.priority_queue)
+                del self.processes[p.pid]
+            else:
+                logging.warning("Process {} was discarded.".format(process.pid))
+                return
         heapq.heappush(self.priority_queue, process)
         self.processes[process.pid] = process
 
