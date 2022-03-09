@@ -1,0 +1,33 @@
+name: task manager
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+
+jobs:
+  RunUnitTests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Git Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: '1'
+
+      - name: Build Image
+        run: |
+          docker build --build-arg python_src=${pwd} -f Dockerfile -t task_manager_pipeline:latest .
+
+      - name: Unit Test TaskManagerMaxSize
+        run: |
+             docker run --entrypoint python3 -t task_manager_pipeline -m pytest /opt/build/python/tests/task_manager_max_size_test.py
+
+      - name: Unit Test TaskManagerFIFO
+        run: |
+             docker run --entrypoint python3 -t task_manager_pipeline -m pytest /opt/build/python/tests/task_manager_fifo_test.py
+
+      - name: Unit Test TaskManagerPriorityBased
+        run: |
+             docker run --entrypoint python3 -t task_manager_pipeline -m pytest /opt/build/python/tests/task_manager_priority_test.py
