@@ -1,15 +1,15 @@
 import unittest
 
-from task_manager import TaskManagerMaxSize, Process
+from task_manager import TaskManagerMaxSize, Process, Priority
 
 
 class TaskManagerTestCase(unittest.TestCase):
     def setUp(self) -> None:
         self.tm = TaskManagerMaxSize(2)
-        self.p1 = Process(1, "low")
-        self.p2 = Process(2, "medium")
-        self.p3 = Process(3, "medium")
-        self.p4 = Process(4, "high")
+        self.p1 = Process(1, Priority.low)
+        self.p2 = Process(2, Priority.medium)
+        self.p3 = Process(3, Priority.medium)
+        self.p4 = Process(4, Priority.high)
 
     def test_process_is_discarded(self):
         self.tm.add(self.p1)

@@ -6,7 +6,10 @@ import time
 from typing import List
 
 
-Priority = Enum("Priority", ["low", "medium", "high"])
+class Priority(Enum):
+    low = 0
+    medium = 1
+    high = 2
 
 
 class Process(object):
@@ -18,7 +21,7 @@ class Process(object):
     def __lt__(self, other):
         if self.priority == other.priority:
             return self.timestamp < other.timestamp
-        return self.priority < other.priority
+        return self.priority.value < other.priority.value
 
     def kill(self):
         pass
@@ -100,7 +103,7 @@ class TaskManagerPriorityBased(TaskManagerInterface):
 
     def add(self, process: Process):  # O(logN)
         if len(self.processes) == self.max_capacity:
-            if self.priority_queue[0].priority < process.priority:
+            if self.priority_queue[0].priority.value < process.priority.value:
                 p = heapq.heappop(self.priority_queue)
                 del self.processes[p.pid]
             else:
